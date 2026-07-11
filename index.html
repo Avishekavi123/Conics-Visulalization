@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avishek Sir — Conics Visualization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.11.0/math.min.js"></script>
+<style>
+  :root{
+    --bg:#081b30;
+    --sheet:#0e2a4a;
+    --sheet-2:#123457;
+    --grid-major: rgba(148,193,227,0.28);
+    --grid-minor: rgba(148,193,227,0.10);
+    --axis: rgba(222,238,252,0.9);
+    --ink:#e3eef9;
+    --ink-muted:#7ea3c4;
+    --hair: rgba(148,193,227,0.28);
+    --amber:#ffb703;
+    --cyan:#4cc9f0;
+    --violet:#c77dff;
+    --pink:#ff6b9d;
+    --danger:#ff8080;
+    --font-display:'Rajdhani',sans-serif;
+    --font-mono:'Space Mono',monospace;
+    --font-body:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(ellipse at 20% -10%, #0f3155 0%, var(--bg) 55%);
+    color:var(--ink);
+    font-family:var(--font-body);
+    min-height:100vh;
+    padding:18px;
+  }
+  .sheet{
+    position:relative;
+    max-width:1240px;
+    margin:0 auto;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 39px, var(--grid-minor) 39px 40px),
+      repeating-linear-gradient(90deg, transparent 0 39px, var(--grid-minor) 39px 40px),
+      var(--sheet);
+    border:1px solid var(--hair);
+    border-radius:6px;
+    padding:26px 26px 18px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.02);
+  }
+  .crop{position:absolute; width:16px; height:16px; opacity:0.55;}
+  .crop::before,.crop::after{content:'';position:absolute;background:var(--ink-muted);}
+  .crop::before{width:16px;height:1px;top:8px;left:0;}
+  .crop::after{width:1px;height:16px;left:8px;top:0;}
+  .crop.tl{top:10px;left:10px;} .crop.tr{top:10px;right:10px;} .crop.bl{bottom:10px;left:10px;} .crop.br{bottom:10px;right:10px;}
+
+  header.titleblock{
+    display:flex; flex-wrap:wrap; gap:20px; justify-content:space-between; align-items:flex-end;
+    border-bottom:1px solid var(--hair);
+    padding-bottom:18px; margin-bottom:8px;
+  }
+  .eyebrow{
+    font-family:var(--font-mono); letter-spacing:0.18em; font-size:11px; color:var(--cyan);
+    text-transform:uppercase;
+  }
+  h1{
+    font-family:var(--font-display); font-weight:700; font-size:clamp(28px,4.2vw,44px);
+    margin:6px 0 4px; letter-spacing:0.01em; line-height:1.02;
+  }
+  h1 span{ display:block; color:var(--amber); font-size:0.55em; font-weight:600; letter-spacing:0.06em; margin-top:2px;}
+  .tb-desc{ color:var(--ink-muted); max-width:520px; font-size:14.5px; line-height:1.5; margin:6px 0 0;}
+  .tb-stamp{
+    display:grid; grid-template-columns:repeat(2,auto); gap:2px 26px;
+    font-family:var(--font-mono); font-size:11px; border:1px solid var(--hair); padding:10px 16px; border-radius:4px;
+    background:rgba(0,0,0,0.15);
+  }
+  .tb-stamp div{ display:flex; flex-direction:column; gap:2px; padding:4px 0;}
+  .tb-stamp label{ color:var(--ink-muted); letter-spacing:0.1em; font-size:9.5px;}
+  .tb-stamp span{ color:var(--ink); font-size:12.5px;}
+
+
+
+  main.workspace{
+    display:flex; flex-direction:column; gap:18px; margin-top:18px;
+  }
+
+  .panel{ display:flex; flex-direction:column; gap:14px; }
+  .panel.controls{ flex-direction:row; flex-wrap:wrap; align-items:flex-start; }
+  .panel.controls .eq-card{ flex:1 1 320px; }
+  .panel.controls .examples{ flex:1 1 100%; order:3; }
+  .panel.controls .keyboard{ flex:1 1 340px; max-width:480px; }
+  @media (max-width: 760px){ .panel.controls{ flex-direction:column; } }
+
+  .eq-card{
+    background:var(--sheet-2); border:1px solid var(--hair); border-radius:6px; padding:12px 14px;
+  }
+  .eq-head{ display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+  .swatch{ width:12px; height:12px; border-radius:3px; display:inline-block; }
+  .swatchA{ background:var(--amber); box-shadow:0 0 8px var(--amber); }
+  .swatchB{ background:var(--cyan); box-shadow:0 0 8px var(--cyan); }
+  .eq-head label{ font-family:var(--font-display); font-weight:600; font-size:15px; letter-spacing:0.02em; }
+  .type-badge{
+    margin-left:auto; font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.06em;
+    padding:3px 9px; border-radius:20px; border:1px solid var(--hair); color:var(--ink-muted);
+  }
+  .vis-toggle{ font-size:11px; color:var(--ink-muted); display:flex; align-items:center; gap:5px; font-family:var(--font-mono); font-weight:400 !important; }
+  .vis-toggle input{ accent-color:var(--amber); }
+  .eq-input{
+    width:100%; background:#081b30; border:1px solid var(--hair); border-radius:4px;
+    color:var(--ink); font-family:var(--font-mono); font-size:16px; padding:9px 10px;
+    outline:none;
+  }
+  .eq-input:focus{ border-color:var(--cyan); box-shadow:0 0 0 2px rgba(76,201,240,0.18); }
+  .eq-error{ min-height:15px; font-size:11.5px; color:var(--danger); margin-top:5px; font-family:var(--font-mono);}
+
+  .examples{ font-size:11.5px; color:var(--ink-muted); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .examples button{
+    background:transparent; border:1px solid var(--hair); color:var(--ink);
+    font-family:var(--font-mono); font-size:11px; padding:5px 9px; border-radius:20px; cursor:pointer;
+  }
+  .examples button:hover{ border-color:var(--cyan); color:var(--cyan); }
+
+  .keyboard{
+    background:var(--sheet-2); border:1px solid var(--hair); border-radius:6px; padding:10px;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .kb-label{ font-family:var(--font-mono); font-size:10px; letter-spacing:0.12em; color:var(--ink-muted); text-transform:uppercase; margin-bottom:2px;}
+  .kb-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+  .key{
+    background:#0c2444; border:1px solid var(--hair); color:var(--ink);
+    font-family:var(--font-mono); font-size:15px; padding:10px 0; border-radius:5px; cursor:pointer;
+    transition:transform .05s ease, border-color .15s ease;
+  }
+  .key:hover{ border-color:var(--cyan); }
+  .key:active{ transform:scale(0.94); }
+  .key.wide{ grid-column:span 1; color:var(--amber); }
+  .key.op{ color:var(--cyan); }
+  .key.danger{ color:var(--danger); }
+
+  .grapher{ display:flex; flex-direction:column; gap:8px; min-height:640px; }
+  .graph-toolbar{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    font-family:var(--font-mono); font-size:12px; color:var(--ink-muted);
+  }
+  .graph-toolbar button{
+    background:#0c2444; border:1px solid var(--hair); color:var(--ink); width:30px; height:30px;
+    border-radius:5px; cursor:pointer; font-size:16px; line-height:1;
+  }
+  .graph-toolbar button:hover{ border-color:var(--cyan); }
+  .graph-toolbar .reset{ width:auto; padding:0 10px; font-size:11px; }
+  .coord-readout{ margin-left:auto; }
+  .graph-wrap{
+    position:relative; flex:1; min-height:600px; height:70vh; border:1px solid var(--hair); border-radius:6px; overflow:hidden;
+    background:#0a2440;
+  }
+  #graph{ width:100%; height:100%; display:block; cursor:grab; touch-action:none; }
+  #graph:active{ cursor:grabbing; }
+
+  .practice{
+    margin-top:22px; padding-top:16px; border-top:1px solid var(--hair);
+  }
+  .practice h2{
+    font-family:var(--font-display); font-weight:700; font-size:20px; margin:0 0 4px; color:var(--ink);
+    letter-spacing:0.02em;
+  }
+  .practice .tb-desc{ margin:0 0 14px; }
+  .subject-tabs{ display:flex; gap:8px; margin-bottom:14px; }
+  .tab-btn{
+    background:var(--sheet-2); border:1px solid var(--hair); color:var(--ink-muted);
+    font-family:var(--font-display); font-weight:600; font-size:14px; letter-spacing:0.03em;
+    padding:8px 18px; border-radius:20px; cursor:pointer;
+  }
+  .tab-btn:hover{ border-color:var(--cyan); color:var(--ink); }
+  .tab-btn.active{ background:var(--amber); color:#1a1204; border-color:var(--amber); }
+
+  .qgroup{ margin-bottom:14px; }
+  .qgroup-title{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em; color:var(--ink-muted);
+    text-transform:uppercase; margin-bottom:6px;
+  }
+  .qgrid{ display:flex; flex-wrap:wrap; gap:8px; }
+  .qbtn{
+    background:var(--sheet-2); border:1px solid var(--hair); color:var(--ink);
+    border-radius:5px; padding:6px 10px; cursor:pointer; text-align:left;
+    display:flex; flex-direction:column; gap:2px; min-width:96px;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .qbtn:hover{ border-color:var(--cyan); }
+  .qbtn.active{ border-color:var(--amber); background:#1a3f68; box-shadow:0 0 10px rgba(255,183,3,0.25); }
+  .qnum{ font-family:var(--font-display); font-weight:600; font-size:13px; color:var(--amber); }
+  .qeq{ font-family:var(--font-mono); font-size:10px; color:var(--ink-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:150px; }
+  .qbtn.active .qeq{ color:var(--ink); }
+
+  .tb-footer{
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;
+    border-top:1px solid var(--hair); margin-top:20px; padding-top:12px;
+    font-family:var(--font-mono); font-size:11px; color:var(--ink-muted);
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="crop tl"></div><div class="crop tr"></div><div class="crop bl"></div><div class="crop br"></div>
+
+  <header class="titleblock">
+    <div class="tb-main">
+      <div class="eyebrow">Drafting Sheet · Conic Sections</div>
+      <h1>AVISHEK SIR<span>CONICS VISUALIZATION</span></h1>
+      <p class="tb-desc">Type an equation — a line, parabola, ellipse or hyperbola — and watch it plotted instantly.</p>
+    </div>
+    <div class="tb-stamp">
+      <div><label>DRAWN BY</label><span>Avishek Sir</span></div>
+      <div><label>SUBJECT</label><span>Conic Sections</span></div>
+      <div><label>SCALE</label><span id="scaleReadout">1 : 1</span></div>
+      <div><label>SHEET</label><span>01 / 01</span></div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <div class="panel controls">
+      <div class="eq-card">
+        <div class="eq-head">
+          <span class="swatch swatchA"></span>
+          <label for="eqA">Equation</label>
+          <span class="type-badge" id="typeA">—</span>
+          <label class="vis-toggle"><input type="checkbox" id="showA" checked> show</label>
+        </div>
+        <input type="text" id="eqA" class="eq-input" autocomplete="off" spellcheck="false" value="y^2 = 4x">
+        <div class="eq-error" id="errA"></div>
+      </div>
+
+      <div class="examples">
+        <span>Quick load →</span>
+        <button data-formula="y = 2x + 1">Line</button>
+        <button data-formula="y = x^2/3">Parabola</button>
+        <button data-formula="x^2/16 + y^2/9 = 1">Ellipse</button>
+        <button data-formula="x^2/9 - y^2/4 = 1">Hyperbola</button>
+        <button data-formula="x^2 + y^2 = 9">Circle</button>
+      </div>
+
+      <div class="keyboard" id="keyboard">
+        <div class="kb-label">Equation Keyboard</div>
+        <div class="kb-row">
+          <button class="key" data-insert="7">7</button>
+          <button class="key" data-insert="8">8</button>
+          <button class="key" data-insert="9">9</button>
+          <button class="key op" data-insert="/">÷</button>
+          <button class="key" data-insert="(">(</button>
+        </div>
+        <div class="kb-row">
+          <button class="key" data-insert="4">4</button>
+          <button class="key" data-insert="5">5</button>
+          <button class="key" data-insert="6">6</button>
+          <button class="key op" data-insert="*">×</button>
+          <button class="key" data-insert=")">)</button>
+        </div>
+        <div class="kb-row">
+          <button class="key" data-insert="1">1</button>
+          <button class="key" data-insert="2">2</button>
+          <button class="key" data-insert="3">3</button>
+          <button class="key op" data-insert="-">−</button>
+          <button class="key op" data-insert="^">^</button>
+        </div>
+        <div class="kb-row">
+          <button class="key" data-insert="0">0</button>
+          <button class="key" data-insert=".">.</button>
+          <button class="key wide" data-insert="x">x</button>
+          <button class="key wide" data-insert="y">y</button>
+          <button class="key op" data-insert="+">+</button>
+        </div>
+        <div class="kb-row">
+          <button class="key" data-insert="pi">π</button>
+          <button class="key" data-insert="sqrt(">√(</button>
+          <button class="key op" data-insert="=">=</button>
+          <button class="key danger" data-action="backspace">⌫</button>
+          <button class="key danger" data-action="clear">C</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel grapher">
+      <div class="graph-toolbar">
+        <button id="zoomIn" title="Zoom in">+</button>
+        <button id="zoomOut" title="Zoom out">−</button>
+        <button id="resetView" class="reset">Reset view</button>
+        <span class="coord-readout" id="coordReadout">x: —, y: —</span>
+      </div>
+      <div class="graph-wrap">
+        <canvas id="graph"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <section class="practice">
+    <h2>Practice Questions</h2>
+    <p class="tb-desc">Choose a chapter, then tap any question number to plot its equation on the graph above.</p>
+    <div class="subject-tabs" id="subjectTabs">
+      <button class="tab-btn active" data-subject="parabola">Parabola</button>
+      <button class="tab-btn" data-subject="ellipse">Ellipse</button>
+    </div>
+    <div id="qContainer"></div>
+  </section>
+
+  <footer class="tb-footer">
+    <span>Drag the graph to pan · scroll or use +/− to zoom</span>
+    <span>Examples: y = 2x+1 &nbsp;·&nbsp; y = x^2 &nbsp;·&nbsp; x^2/9 + y^2/4 = 1 &nbsp;·&nbsp; x^2 − y^2 = 1</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('graph');
+  const ctx = canvas.getContext('2d');
+  const coordReadout = document.getElementById('coordReadout');
+  const scaleReadout = document.getElementById('scaleReadout');
+
+  let dpr = window.devicePixelRatio || 1;
+  let cssW = 600, cssH = 420;
+  let firstSize = true;
+
+  const view = { centerX: 0, centerY: 0, scale: 40 };
+
+  const state = {
+    A: { fn: null, color: getVar('--amber'), visible: true }
+  };
+
+  function getVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function resizeCanvas(){
+    const rect = canvas.parentElement.getBoundingClientRect();
+    cssW = Math.max(200, rect.width);
+    cssH = Math.max(200, rect.height);
+    dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    if(firstSize){
+      view.scale = cssW / 20;
+      firstSize = false;
+    }
+    render(false);
+  }
+
+  function toMathX(px){ return (px - cssW/2)/view.scale + view.centerX; }
+  function toMathY(py){ return (cssH/2 - py)/view.scale + view.centerY; }
+  function toPixelX(mx){ return cssW/2 + (mx - view.centerX)*view.scale; }
+  function toPixelY(my){ return cssH/2 - (my - view.centerY)*view.scale; }
+
+  function niceStep(scale){
+    const target = 70/scale;
+    const mag = Math.pow(10, Math.floor(Math.log10(target)));
+    const residual = target/mag;
+    let step;
+    if(residual > 5) step = 10*mag;
+    else if(residual > 2) step = 5*mag;
+    else if(residual > 1) step = 2*mag;
+    else step = mag;
+    return step;
+  }
+
+  function fmt(n){
+    if(Math.abs(n) < 1e-9) return '0';
+    if(Math.abs(n) >= 1000 || Math.abs(n) < 0.01) return n.toExponential(1);
+    return parseFloat(n.toFixed(4)).toString();
+  }
+
+  function drawGrid(){
+    ctx.clearRect(0,0,cssW,cssH);
+    ctx.fillStyle = '#0a2440';
+    ctx.fillRect(0,0,cssW,cssH);
+
+    const step = niceStep(view.scale);
+    const xMin = toMathX(0), xMax = toMathX(cssW);
+    const yMin = toMathY(cssH), yMax = toMathY(0);
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = getVar('--grid-major');
+    ctx.font = '11px "Space Mono", monospace';
+    ctx.fillStyle = getVar('--ink-muted');
+
+    const startX = Math.floor(xMin/step)*step;
+    for(let x = startX; x <= xMax; x += step){
+      const px = toPixelX(x);
+      ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,cssH); ctx.stroke();
+    }
+    const startY = Math.floor(yMin/step)*step;
+    for(let y = startY; y <= yMax; y += step){
+      const py = toPixelY(y);
+      ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(cssW,py); ctx.stroke();
+    }
+
+    // axes
+    ctx.strokeStyle = getVar('--axis');
+    ctx.lineWidth = 1.6;
+    const axisY = toPixelY(0), axisX = toPixelX(0);
+    if(axisY >= 0 && axisY <= cssH){
+      ctx.beginPath(); ctx.moveTo(0,axisY); ctx.lineTo(cssW,axisY); ctx.stroke();
+    }
+    if(axisX >= 0 && axisX <= cssW){
+      ctx.beginPath(); ctx.moveTo(axisX,0); ctx.lineTo(axisX,cssH); ctx.stroke();
+    }
+
+    // labels
+    const labelY = Math.min(Math.max(axisY + 14, 12), cssH - 6);
+    ctx.fillStyle = getVar('--ink-muted');
+    for(let x = startX; x <= xMax; x += step){
+      if(Math.abs(x) < step/1000) continue;
+      ctx.fillText(fmt(x), toPixelX(x) + 3, labelY);
+    }
+    const labelX = Math.min(Math.max(axisX + 4, 4), cssW - 40);
+    for(let y = startY; y <= yMax; y += step){
+      if(Math.abs(y) < step/1000) continue;
+      ctx.fillText(fmt(y), labelX, toPixelY(y) - 3);
+    }
+
+    scaleReadout.textContent = '1 : ' + fmt(1/view.scale*70);
+  }
+
+  const EDGE = { TOP:0, RIGHT:1, BOTTOM:2, LEFT:3 };
+  const TABLE = {
+    1:[[3,0]], 2:[[0,1]], 3:[[3,1]], 4:[[1,2]],
+    5:[[3,0],[1,2]], 6:[[0,2]], 7:[[3,2]], 8:[[3,2]],
+    9:[[0,2]], 10:[[0,1],[2,3]], 11:[[1,2]], 12:[[3,1]],
+    13:[[0,1]], 14:[[3,0]]
+  };
+
+  function edgePoint(edge, x0,x1,y0,y1, fTL,fTR,fBR,fBL){
+    let t;
+    switch(edge){
+      case 0: { const d = fTL-fTR; t = d!==0 ? fTL/d : 0.5; return {x:x0+t*(x1-x0), y:y0}; }
+      case 1: { const d = fTR-fBR; t = d!==0 ? fTR/d : 0.5; return {x:x1, y:y0+t*(y1-y0)}; }
+      case 2: { const d = fBL-fBR; t = d!==0 ? fBL/d : 0.5; return {x:x0+t*(x1-x0), y:y1}; }
+      case 3: { const d = fTL-fBL; t = d!==0 ? fTL/d : 0.5; return {x:x0, y:y0+t*(y1-y0)}; }
+    }
+  }
+
+  function traceAndDraw(fn, color, cell){
+    const cols = Math.ceil(cssW/cell);
+    const rows = Math.ceil(cssH/cell);
+    const values = [];
+    for(let j=0;j<=rows;j++){
+      const row = new Array(cols+1);
+      const my = toMathY(j*cell);
+      for(let i=0;i<=cols;i++){
+        const mx = toMathX(i*cell);
+        let v;
+        try{ v = fn(mx,my); if(typeof v !== 'number' || !isFinite(v)) v = NaN; }
+        catch(e){ v = NaN; }
+        row[i] = v;
+      }
+      values.push(row);
+    }
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.2;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 5;
+    ctx.beginPath();
+
+    for(let j=0;j<rows;j++){
+      for(let i=0;i<cols;i++){
+        const fTL = values[j][i], fTR = values[j][i+1];
+        const fBR = values[j+1][i+1], fBL = values[j+1][i];
+        if(isNaN(fTL)||isNaN(fTR)||isNaN(fBR)||isNaN(fBL)) continue;
+        const idx = (fTL>=0?1:0) + (fTR>=0?2:0) + (fBR>=0?4:0) + (fBL>=0?8:0);
+        const pairs = TABLE[idx];
+        if(!pairs) continue;
+        const x0=i*cell, x1=(i+1)*cell, y0=j*cell, y1=(j+1)*cell;
+        for(const pair of pairs){
+          const p1 = edgePoint(pair[0], x0,x1,y0,y1, fTL,fTR,fBR,fBL);
+          const p2 = edgePoint(pair[1], x0,x1,y0,y1, fTL,fTR,fBR,fBL);
+          ctx.moveTo(p1.x,p1.y);
+          ctx.lineTo(p2.x,p2.y);
+        }
+      }
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  let renderTimer = null;
+  function render(interactive){
+    drawGrid();
+    const cell = interactive ? 7 : 3;
+    if(state.A.visible && state.A.fn) traceAndDraw(state.A.fn, state.A.color, cell);
+    if(interactive){
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(()=>render(false), 180);
+    }
+  }
+
+  // ---------- equation handling ----------
+  function splitEquation(str){
+    const parts = str.split('=');
+    if(parts.length === 1) return { lhs: parts[0], rhs: '0' };
+    if(parts.length === 2) return { lhs: parts[0], rhs: parts[1] };
+    throw new Error('Use only one "=" sign.');
+  }
+
+  function compileEq(lhs, rhs){
+    const node = math.parse('(' + lhs + ')-(' + rhs + ')');
+    const code = node.compile();
+    return function(x,y){
+      try{
+        const v = code.evaluate({x:x,y:y});
+        return (typeof v === 'number') ? v : NaN;
+      }catch(e){ return NaN; }
+    };
+  }
+
+  function classifyEquation(lhs, rhs){
+    try{
+      const node = math.parse('(' + lhs + ')-(' + rhs + ')');
+      const fx = math.derivative(node, 'x');
+      const fxx = math.derivative(fx, 'x');
+      const fy = math.derivative(node, 'y');
+      const fyy = math.derivative(fy, 'y');
+      const fxy = math.derivative(fx, 'y');
+      const pts = [{x:0,y:0},{x:1.7,y:-2.3}];
+      const eps = 1e-6;
+      const vals = pts.map(function(p){
+        return {
+          A: fxx.evaluate(p)/2,
+          C: fyy.evaluate(p)/2,
+          B: fxy.evaluate(p)
+        };
+      });
+      if(Math.abs(vals[0].A-vals[1].A) > eps || Math.abs(vals[0].C-vals[1].C) > eps || Math.abs(vals[0].B-vals[1].B) > eps){
+        return 'General Curve';
+      }
+      const A = vals[0].A, B = vals[0].B, C = vals[0].C;
+      if(Math.abs(A) < eps && Math.abs(B) < eps && Math.abs(C) < eps) return 'Straight Line';
+      const disc = B*B - 4*A*C;
+      if(Math.abs(B) < eps && Math.abs(A-C) < eps) return 'Circle';
+      if(disc < -eps) return 'Ellipse';
+      if(Math.abs(disc) <= eps) return 'Parabola';
+      return 'Hyperbola';
+    }catch(e){
+      return 'General Curve';
+    }
+  }
+
+  function updateEq(id){
+    const input = document.getElementById('eq'+id);
+    const errEl = document.getElementById('err'+id);
+    const badge = document.getElementById('type'+id);
+    const str = input.value.trim();
+    errEl.textContent = '';
+    if(!str){
+      state[id].fn = null;
+      badge.textContent = '—';
+      render(false);
+      return;
+    }
+    try{
+      const parts = splitEquation(str);
+      const fn = compileEq(parts.lhs, parts.rhs);
+      fn(1,1); // trigger any evaluation error early
+      state[id].fn = fn;
+      badge.textContent = classifyEquation(parts.lhs, parts.rhs);
+    }catch(e){
+      state[id].fn = null;
+      errEl.textContent = 'Check your equation — use x and y, one "=" sign.';
+      badge.textContent = '—';
+    }
+    render(false);
+  }
+
+  function debounce(fn, delay){
+    let t;
+    return function(){
+      const args = arguments;
+      clearTimeout(t);
+      t = setTimeout(function(){ fn.apply(null,args); }, delay);
+    };
+  }
+
+  const debouncedA = debounce(function(){ updateEq('A'); }, 280);
+
+  const eqA = document.getElementById('eqA');
+  eqA.addEventListener('input', debouncedA);
+
+  const lastFocused = 'A';
+
+  document.getElementById('showA').addEventListener('change', function(e){ state.A.visible = e.target.checked; render(false); });
+
+  // ---------- example chips ----------
+  document.querySelectorAll('.examples button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      eqA.value = btn.dataset.formula;
+      eqA.focus();
+      updateEq('A');
+    });
+  });
+
+  // ---------- virtual keyboard ----------
+  const keyboard = document.getElementById('keyboard');
+  keyboard.addEventListener('mousedown', function(e){
+    if(e.target.closest('button')) e.preventDefault();
+  });
+  function insertAtCursor(id, text){
+    const el = document.getElementById('eq'+id);
+    const start = (el.selectionStart != null) ? el.selectionStart : el.value.length;
+    const end = (el.selectionEnd != null) ? el.selectionEnd : el.value.length;
+    el.value = el.value.slice(0,start) + text + el.value.slice(end);
+    const pos = start + text.length;
+    el.focus();
+    el.setSelectionRange(pos,pos);
+    debouncedA();
+  }
+  function backspaceAt(id){
+    const el = document.getElementById('eq'+id);
+    let start = (el.selectionStart != null) ? el.selectionStart : el.value.length;
+    let end = (el.selectionEnd != null) ? el.selectionEnd : el.value.length;
+    if(start === end && start > 0){
+      el.value = el.value.slice(0,start-1) + el.value.slice(end);
+      start = start - 1;
+    } else {
+      el.value = el.value.slice(0,start) + el.value.slice(end);
+    }
+    el.focus();
+    el.setSelectionRange(start,start);
+    debouncedA();
+  }
+  keyboard.addEventListener('click', function(e){
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const id = lastFocused;
+    if(btn.dataset.action === 'backspace'){ backspaceAt(id); return; }
+    if(btn.dataset.action === 'clear'){
+      eqA.value = '';
+      eqA.focus();
+      updateEq('A');
+      return;
+    }
+    insertAtCursor(id, btn.dataset.insert);
+  });
+
+  // ---------- pan / zoom ----------
+  let dragging = false, lastX = 0, lastY = 0;
+  canvas.addEventListener('pointerdown', function(e){
+    dragging = true; lastX = e.clientX; lastY = e.clientY;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', function(e){
+    const rect = canvas.getBoundingClientRect();
+    const px = e.clientX - rect.left, py = e.clientY - rect.top;
+    coordReadout.textContent = 'x: ' + fmt(toMathX(px)) + ', y: ' + fmt(toMathY(py));
+    if(!dragging) return;
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    view.centerX -= dx/view.scale;
+    view.centerY += dy/view.scale;
+    render(true);
+  });
+  canvas.addEventListener('pointerup', function(){ dragging = false; render(false); });
+  canvas.addEventListener('pointerleave', function(){ dragging = false; });
+
+  canvas.addEventListener('wheel', function(e){
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const px = e.clientX - rect.left, py = e.clientY - rect.top;
+    const mx = toMathX(px), my = toMathY(py);
+    const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+    const newScale = Math.min(4000, Math.max(4, view.scale*factor));
+    view.centerX = mx - (px - cssW/2)/newScale;
+    view.centerY = my - (cssH/2 - py)/newScale;
+    view.scale = newScale;
+    render(true);
+  }, { passive:false });
+
+  document.getElementById('zoomIn').addEventListener('click', function(){
+    view.scale = Math.min(4000, view.scale*1.3); render(false);
+  });
+  document.getElementById('zoomOut').addEventListener('click', function(){
+    view.scale = Math.max(4, view.scale/1.3); render(false);
+  });
+  document.getElementById('resetView').addEventListener('click', function(){
+    view.centerX = 0; view.centerY = 0; view.scale = cssW/20; render(false);
+  });
+
+  window.addEventListener('resize', debounce(resizeCanvas, 150));
+
+  // ---------- practice questions from the textbook chapters ----------
+  const ELLIPSE_QUESTIONS = [
+    { group: 'Q1', items: [
+      { label:'1(i)', eq:'8x^2 + 9y^2 = 648' },
+      { label:'1(ii)', eq:'x^2/17 + y^2/81 = 1' },
+      { label:'1(iii)', eq:'3x^2 + 4y^2 - 14x + 11 = 0' },
+      { label:'1(iv)', eq:'20x^2 + 36y^2 = 405' }
+    ]},
+    { group: 'Q2', items: [
+      { label:'2(i)', eq:'(x-3)^2/16 + (y+1)^2/12 = 1' },
+      { label:'2(ii)', eq:'x^2/16 + y^2/12 = 1' }
+    ]},
+    { group: 'Q3', items: [
+      { label:'3(i)', eq:'4x^2 + 5y^2 = 80' },
+      { label:'3(ii)', eq:'x^2 + 4y^2 = 1' },
+      { label:'3(iii)', eq:'x^2/100 + y^2/25 = 1' }
+    ]},
+    { group: 'Q4', items: [
+      { label:'4(i)', eq:'3x^2 + 4y^2 = 27' }
+    ]},
+    { group: 'Q5', items: [
+      { label:'5(i)', eq:'4x^2/81 + y^2/18 = 1' },
+      { label:'5(ii)', eq:'8x^2 + 9y^2 = 288' },
+      { label:'5(iii)', eq:'x^2 + 2y^2 = 64' },
+      { label:'5(iv)', eq:'3x^2 + 4y^2 = 12' },
+      { label:'5(v)', eq:'3x^2 + 5y^2 = 32' }
+    ]},
+    { group: 'Q6', items: [
+      { label:'6(i)', eq:'9x^2 + 25y^2 = 225' },
+      { label:'6(ii)', eq:'25x^2 + 9y^2 = 225' },
+      { label:'6(iii)', eq:'5x^2 + 9y^2 = 45' }
+    ]},
+    { group: 'Q7', items: [
+      { label:'7(i)', eq:'16x^2 + 9y^2 - 32x - 128 = 0' },
+      { label:'7(ii)', eq:'5x^2 + 9y^2 - 30x = 0' },
+      { label:'7(iii)', eq:'2x^2 + y^2 - 8x - 2y + 1 = 0' }
+    ]},
+    { group: 'Q8', items: [
+      { label:'8(i)', eq:'x^2/81 + y^2/9 = 1' },
+      { label:'8(ii)', eq:'9x^2 + 16y^2 = 144' }
+    ]},
+    { group: 'Q9', items: [
+      { label:'9(iii)', eq:'5x^2 + 9y^2 = 180' },
+      { label:'9(iv)', eq:'x^2 + 2y^2 = 100' },
+      { label:'9(v)', eq:'(x-2)^2/5 + (y+1)^2/4 = 1' }
+    ]},
+    { group: 'Q10', items: [
+      { label:'10(i)', eq:'5x^2 + 5y^2 + 2xy + 10x - 22y + 29 = 0' },
+      { label:'10(ii)', eq:'11x^2 + 14y^2 - 4xy - 48x - 24y + 66 = 0' },
+      { label:'10(iii)', eq:'3x^2 + 3y^2 + 2xy - 8 = 0' },
+      { label:'10(iv)', eq:'7x^2 + 7y^2 + 2xy + 10x - 10y + 7 = 0' },
+      { label:'10(vi)', eq:'4x^2 + 3y^2 - 24y = 0' },
+      { label:'10(vii)', eq:'17x^2 + 17y^2 - 2xy - 104x - 140y + 446 = 0' },
+      { label:'10(viii)', eq:'11x^2 + 14y^2 - 4xy + 72x - 84y + 186 = 0' },
+      { label:'10(ix)', eq:'9x^2 + 25y^2 + 64x - 64 = 0' },
+      { label:'10(x)', eq:'4x^2 + 4y^2 - 40x - 16y + 140 = 0' },
+      { label:'10(xi)', eq:'9x^2 + 9y^2 + 4xy - 44x + 28y + 46 = 0' }
+    ]},
+    { group: 'Q11', items: [
+      { label:'11(i)', eq:'25x^2 + 16y^2 = 400' },
+      { label:'11(ii)', eq:'16x^2 + 25y^2 = 400' },
+      { label:'11(iii)', eq:'9x^2 + 25y^2 = 225' }
+    ]},
+    { group: 'Q12', items: [
+      { label:'12(i)', eq:'3x^2 + 4y^2 = 12' },
+      { label:'12(ii)', eq:'5x^2 + 4y^2 = 1' },
+      { label:'12(iii)', eq:'2x^2 + 3y^2 = 1' },
+      { label:'12(iv)', eq:'4x^2 + 5y^2 = 1' },
+      { label:'12(v)', eq:'3x^2 + 5y^2 = 1' }
+    ]},
+    { group: 'Q13', items: [
+      { label:'13', eq:'9x^2 + 25y^2 = 225' }
+    ]},
+    { group: 'Q14', items: [
+      { label:'14(i)', eq:'5x^2 + 4y^2 = 20' },
+      { label:'14(ii)', eq:'9x^2 + 16y^2 = 144' }
+    ]}
+  ];
+
+  const PARABOLA_QUESTIONS = [
+    { group: 'Q1', items: [
+      { label:'1(i)', eq:'y^2 = 9x' },
+      { label:'1(ii)', eq:'x^2 = -12y' },
+      { label:'1(iii)', eq:'x^2 + 4x + 2y = 0' },
+      { label:'1(iv)', eq:'y^2 + 8x - 2y - 23 = 0' },
+      { label:'1(v)', eq:'y^2 = 8x - 8y' },
+      { label:'1(vi)', eq:'y^2 = 4y + 4x - 8' },
+      { label:'1(vii)', eq:'x^2 + 4y - 4 = 0' },
+      { label:'1(viii)', eq:'y^2 = 4y + 4x - 16' }
+    ]},
+    { group: 'Q2', items: [
+      { label:'2(i) axis', eq:'4x + 3y + 1 = 0' },
+      { label:'2(i) directrix', eq:'3x - 4y - 43 = 0' },
+      { label:'2(ii) directrix', eq:'3x + 4y + 25 = 0' },
+      { label:'2(iii) directrix', eq:'2x + y + 10 = 0' }
+    ]},
+    { group: 'Q3', items: [
+      { label:'3(i)', eq:'5x^2 + 30x + 2y + 59 = 0' },
+      { label:'3(ii)', eq:'x^2 - 2y - 8x + 6 = 0' },
+      { label:'3(iii)', eq:'3x^2 - 4y + 6x - 5 = 0' },
+      { label:'3(iv)', eq:'x^2 - 8x + 2y + 7 = 0' },
+      { label:'3(v)', eq:'(y-1)^2 = 4*(x-2)' },
+      { label:'3(vi)', eq:'5x^2 + 15x - 10y - 4 = 0' },
+      { label:'3(vii)', eq:'y^2 = 4*(x-2)' },
+      { label:'3(viii)', eq:'3y^2 - 10x - 12y - 18 = 0' }
+    ]},
+    { group: 'Q4', items: [
+      { label:'4(i)', eq:'(x+2y)^2 + 116x + 2y + 259 = 0' },
+      { label:'4(ii)', eq:'(4x-3y)^2 - 44x - 42y + 49 = 0' },
+      { label:'4(iii)', eq:'(x-y)^2 + 2x - 6y + 3 = 0' },
+      { label:'4(iv)', eq:'(x+y)^2 - 4x + 4y - 4 = 0' },
+      { label:'4(v)', eq:'y^2 - 10y + 8x - 7 = 0' },
+      { label:'4(vi)', eq:'x^2 - 4x + 12y - 32 = 0' },
+      { label:'4(vii)', eq:'x^2 + 4y^2 - 4xy - 50x + 125 = 0' },
+      { label:'4(viii)', eq:'(y-3)^2 = -28*(x-5)' },
+      { label:'4(ix)', eq:'y^2 = 8x' },
+      { label:'4(x)', eq:'(3x-4y)^2 - 190x - 80y + 625 = 0' }
+    ]},
+    { group: 'Q5', items: [
+      { label:'5(i)', eq:'(y+3)^2 = 4*(x-4)' },
+      { label:'5(ii)', eq:'(x-4)^2 = -16*(y+3)' },
+      { label:'5(iii)', eq:'3x^2 = 4*(y-2)' },
+      { label:'5(iv)a', eq:'y^2 - 2y - 8x + 9 = 0' },
+      { label:'5(iv)b', eq:'y^2 - 2y + 8x - 39 = 0' },
+      { label:'5(v)a', eq:'x^2 - 4x - 8y + 20 = 0' },
+      { label:'5(v)b', eq:'x^2 - 4x + 8y - 44 = 0' }
+    ]},
+    { group: 'Q7', items: [
+      { label:'7(i)', eq:'y^2 = 12x' }
+    ]},
+    { group: 'Q8', items: [
+      { label:'8(i)', eq:'x + y + 3 = 0' },
+      { label:'8(ii) y=2x', eq:'y = 2x' },
+      { label:'8(ii) y=-2x', eq:'y = -2x' }
+    ]},
+    { group: 'Q9', items: [
+      { label:'9(i)', eq:'y = x^2/2 + 2x + 5' }
+    ]},
+    { group: 'Q10', items: [
+      { label:'10(i)', eq:'y^2 = 8x + 5' },
+      { label:'10(ii)', eq:'y^2 = 2*(x+3)' },
+      { label:'10(iii)', eq:'x^2 = 4*(1-y)' }
+    ]},
+    { group: 'Q11', items: [
+      { label:'11', eq:'(2x-y)^2 + 104x + 148y - 484 = 0' }
+    ]},
+    { group: 'Q12', items: [
+      { label:'12', eq:'y^2 = 9x' }
+    ]}
+  ];
+
+  let currentSubject = 'parabola';
+
+  function renderQuestionButtons(data){
+    const container = document.getElementById('qContainer');
+    container.innerHTML = '';
+    data.forEach(function(group){
+      const wrap = document.createElement('div');
+      wrap.className = 'qgroup';
+      const title = document.createElement('div');
+      title.className = 'qgroup-title';
+      title.textContent = group.group;
+      wrap.appendChild(title);
+      const grid = document.createElement('div');
+      grid.className = 'qgrid';
+      group.items.forEach(function(item){
+        const btn = document.createElement('button');
+        btn.className = 'qbtn';
+        btn.dataset.eq = item.eq;
+        btn.innerHTML = '<span class="qnum">' + item.label + '</span><span class="qeq">' + item.eq + '</span>';
+        btn.addEventListener('click', function(){
+          document.querySelectorAll('.qbtn.active').forEach(function(b){ b.classList.remove('active'); });
+          btn.classList.add('active');
+          eqA.value = item.eq;
+          updateEq('A');
+          document.querySelector('.graph-wrap').scrollIntoView({ behavior:'smooth', block:'center' });
+        });
+        grid.appendChild(btn);
+      });
+      wrap.appendChild(grid);
+      container.appendChild(wrap);
+    });
+  }
+  renderQuestionButtons(PARABOLA_QUESTIONS);
+
+  document.getElementById('subjectTabs').addEventListener('click', function(e){
+    const btn = e.target.closest('.tab-btn');
+    if(!btn) return;
+    if(btn.dataset.subject === currentSubject) return;
+    currentSubject = btn.dataset.subject;
+    document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    renderQuestionButtons(currentSubject === 'ellipse' ? ELLIPSE_QUESTIONS : PARABOLA_QUESTIONS);
+  });
+
+  // init
+  resizeCanvas();
+  updateEq('A');
+  updateEq('B');
+})();
+</script>
+</body>
+</html>
