@@ -81,6 +81,23 @@
 
 
 
+  .properties{
+    background:var(--sheet-2); border:1px solid var(--hair); border-radius:6px; padding:12px 14px;
+    display:flex; flex-wrap:wrap; gap:18px;
+  }
+  .prop-group{ flex:1 1 300px; }
+  .prop-group.prop-hidden{ display:none; }
+  .prop-group-title{
+    font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.1em; color:var(--ink-muted);
+    text-transform:uppercase; margin-bottom:7px;
+  }
+  .prop-row{ display:flex; flex-wrap:wrap; gap:8px 14px; }
+  .prop-row label{
+    font-size:12px; color:var(--ink); display:flex; align-items:center; gap:5px; cursor:pointer;
+    font-family:var(--font-body);
+  }
+  .prop-row input{ accent-color:var(--amber); cursor:pointer; }
+
   main.workspace{
     display:flex; flex-direction:column; gap:18px; margin-top:18px;
   }
@@ -279,6 +296,33 @@
       </div>
     </div>
 
+    <div class="properties">
+      <div class="prop-group" id="propGroupParabola">
+        <div class="prop-group-title">Parabola (পরাবৃত্ত)</div>
+        <div class="prop-row">
+          <label><input type="checkbox" data-prop="vertex">Vertex (শীর্ষ)</label>
+          <label><input type="checkbox" data-prop="focus">Focus (উপকেন্দ্র)</label>
+          <label><input type="checkbox" data-prop="directrix">Directrix (নিয়ামক রেখা)</label>
+          <label><input type="checkbox" data-prop="axis">Axis of Symmetry (সমমিতির অক্ষ)</label>
+          <label><input type="checkbox" data-prop="latusRectum">Latus Rectum (উপকেন্দ্রিক লম্ব)</label>
+          <label><input type="checkbox" data-prop="focalLength">Focal Length (উপকেন্দ্রিক দূরত্ব)</label>
+        </div>
+      </div>
+      <div class="prop-group" id="propGroupEllipse">
+        <div class="prop-group-title">Ellipse (উপবৃত্ত)</div>
+        <div class="prop-row">
+          <label><input type="checkbox" data-prop="center">Center (কেন্দ্র)</label>
+          <label><input type="checkbox" data-prop="majorAxis">Major Axis (প্রধান অক্ষ)</label>
+          <label><input type="checkbox" data-prop="minorAxis">Minor Axis (অপ্রধান অক্ষ)</label>
+          <label><input type="checkbox" data-prop="vertices">Vertices (শীর্ষবিন্দুসমূহ)</label>
+          <label><input type="checkbox" data-prop="coVertices">Co-vertices (উপশীর্ষবিন্দুসমূহ)</label>
+          <label><input type="checkbox" data-prop="foci">Foci (উপকেন্দ্রসমূহ)</label>
+          <label><input type="checkbox" data-prop="eccentricity">Eccentricity (উৎকেন্দ্রিকতা)</label>
+          <label><input type="checkbox" data-prop="latusRectumEllipse">Latus Rectum (উপকেন্দ্রিক লম্ব)</label>
+        </div>
+      </div>
+    </div>
+
     <div class="panel grapher">
       <div class="graph-toolbar">
         <button id="zoomIn" title="Zoom in">+</button>
@@ -293,7 +337,7 @@
   </main>
 
   <section class="practice">
-    <h2>Practice Questions</h2>
+    <h2>Practice Questions of S U Ahammod</h2>
     <p class="tb-desc">Choose a chapter, then tap any question number to plot its equation on the graph above.</p>
     <div class="subject-tabs" id="subjectTabs">
       <button class="tab-btn active" data-subject="parabola">Parabola</button>
@@ -484,11 +528,96 @@
     ctx.restore();
   }
 
+  const propToggles = {
+    vertex:false, focus:false, directrix:false, axis:false, latusRectum:false, focalLength:false,
+    center:false, majorAxis:false, minorAxis:false, vertices:false, coVertices:false, foci:false,
+    eccentricity:false, latusRectumEllipse:false
+  };
+
+  function drawPoint(pt, color, label){
+    const px = toPixelX(pt.x), py = toPixelY(pt.y);
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(px,py,4,0,Math.PI*2); ctx.fill();
+    ctx.font = '11px "Space Mono", monospace';
+    ctx.fillText(label, px+7, py-6);
+    ctx.restore();
+  }
+
+  function drawSegment(p1, p2, color, label){
+    const x1 = toPixelX(p1.x), y1 = toPixelY(p1.y), x2 = toPixelX(p2.x), y2 = toPixelY(p2.y);
+    ctx.save();
+    ctx.strokeStyle = color; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    ctx.fillStyle = color; ctx.font = '11px "Space Mono", monospace';
+    ctx.fillText(label, (x1+x2)/2+6, (y1+y2)/2-6);
+    ctx.restore();
+  }
+
+  function drawLineThrough(anchor, dir, color, label){
+    const far = 6000;
+    const p1 = { x: anchor.x - dir.x*far, y: anchor.y - dir.y*far };
+    const p2 = { x: anchor.x + dir.x*far, y: anchor.y + dir.y*far };
+    const x1 = toPixelX(p1.x), y1 = toPixelY(p1.y), x2 = toPixelX(p2.x), y2 = toPixelY(p2.y);
+    ctx.save();
+    ctx.strokeStyle = color; ctx.lineWidth = 1.6;
+    ctx.setLineDash([7,5]);
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    ctx.setLineDash([]);
+    const ax = toPixelX(anchor.x), ay = toPixelY(anchor.y);
+    ctx.fillStyle = color; ctx.font = '11px "Space Mono", monospace';
+    ctx.fillText(label, ax+8, ay+16);
+    ctx.restore();
+  }
+
+  function drawTextLabel(pt, color, label){
+    const px = toPixelX(pt.x), py = toPixelY(pt.y);
+    ctx.save();
+    ctx.fillStyle = color; ctx.font = 'bold 12px "Space Mono", monospace';
+    ctx.fillText(label, px+8, py+18);
+    ctx.restore();
+  }
+
+  function drawPropertyOverlays(){
+    if(!currentProps) return;
+    const P = currentProps;
+    if(P.type === 'Parabola'){
+      if(propToggles.axis) drawLineThrough(P.axisAnchor, P.axisDir, '#4cc9f0', 'Axis');
+      if(propToggles.directrix) drawLineThrough(P.directrixAnchor, P.directrixDir, '#c77dff', 'Directrix');
+      if(propToggles.latusRectum) drawSegment(P.latusRectum[0], P.latusRectum[1], '#ff6b9d', 'Latus Rectum');
+      if(propToggles.focalLength) drawSegment(P.vertex, P.focus, '#06d6a0', 'Focal Length = ' + fmt(P.focalLength));
+      if(propToggles.vertex) drawPoint(P.vertex, '#ffffff', 'Vertex');
+      if(propToggles.focus) drawPoint(P.focus, '#ffd60a', 'Focus');
+    } else if(P.type === 'Ellipse'){
+      if(propToggles.majorAxis) drawSegment(P.majorAxis[0], P.majorAxis[1], '#ffd60a', 'Major Axis');
+      if(propToggles.minorAxis) drawSegment(P.minorAxis[0], P.minorAxis[1], '#4cc9f0', 'Minor Axis');
+      if(propToggles.latusRectumEllipse){
+        drawSegment(P.latusRectum[0][0], P.latusRectum[0][1], '#ff9f1c', 'Latus Rectum');
+        drawSegment(P.latusRectum[1][0], P.latusRectum[1][1], '#ff9f1c', 'Latus Rectum');
+      }
+      if(propToggles.vertices){
+        drawPoint(P.vertices[0], '#ffffff', 'Vertex');
+        drawPoint(P.vertices[1], '#ffffff', 'Vertex');
+      }
+      if(propToggles.coVertices){
+        drawPoint(P.coVertices[0], '#c77dff', 'Co-vertex');
+        drawPoint(P.coVertices[1], '#c77dff', 'Co-vertex');
+      }
+      if(propToggles.foci){
+        drawPoint(P.foci[0], '#ff6b9d', 'Focus');
+        drawPoint(P.foci[1], '#ff6b9d', 'Focus');
+      }
+      if(propToggles.center) drawPoint(P.center, '#ffffff', 'Center');
+      if(propToggles.eccentricity) drawTextLabel(P.center, '#06d6a0', 'e = ' + fmt(P.eccentricity));
+    }
+  }
+
   let renderTimer = null;
   function render(interactive){
     drawGrid();
     const cell = interactive ? 7 : 3;
     if(state.A.visible && state.A.fn) traceAndDraw(state.A.fn, state.A.color, cell);
+    drawPropertyOverlays();
     if(interactive){
       clearTimeout(renderTimer);
       renderTimer = setTimeout(()=>render(false), 180);
@@ -514,7 +643,96 @@
     };
   }
 
-  function classifyEquation(lhs, rhs){
+  function computeProperties(A,B,C,D,E,F,type){
+    const theta = (Math.abs(A-C) < 1e-9 && Math.abs(B) < 1e-9) ? 0 : 0.5*Math.atan2(B, A-C);
+    const ct = Math.cos(theta), st = Math.sin(theta);
+    const Ap = A*ct*ct + B*ct*st + C*st*st;
+    const Cp = A*st*st - B*st*ct + C*ct*ct;
+    const Dp = D*ct + E*st;
+    const Ep = -D*st + E*ct;
+    const Fp = F;
+    const xPrimeDir = { x: ct, y: st };
+    const yPrimeDir = { x: -st, y: ct };
+    function toOriginal(xp,yp){ return { x: xp*ct - yp*st, y: xp*st + yp*ct }; }
+
+    if(type === 'Parabola'){
+      let h,k,p,vertical;
+      if(Math.abs(Cp) >= Math.abs(Ap)){
+        // Ap ~ 0: (y'-k)^2 = 4p(x'-h) — opens along x'
+        k = -Ep/(2*Cp);
+        h = (Ep*Ep/(4*Cp) - Fp)/Dp;
+        p = -Dp/(4*Cp);
+        vertical = false;
+      } else {
+        // Cp ~ 0: (x'-h)^2 = 4p(y'-k) — opens along y'
+        h = -Dp/(2*Ap);
+        k = (Dp*Dp/(4*Ap) - Fp)/Ep;
+        p = -Ep/(4*Ap);
+        vertical = true;
+      }
+      const vertex = toOriginal(h,k);
+      let focus, axisDir, dirAnchorP, dirDir, lrP1, lrP2;
+      if(vertical){
+        focus = toOriginal(h, k+p);
+        axisDir = yPrimeDir;
+        dirAnchorP = toOriginal(h, k-p);
+        dirDir = xPrimeDir;
+        lrP1 = toOriginal(h-2*p, k+p); lrP2 = toOriginal(h+2*p, k+p);
+      } else {
+        focus = toOriginal(h+p, k);
+        axisDir = xPrimeDir;
+        dirAnchorP = toOriginal(h-p, k);
+        dirDir = yPrimeDir;
+        lrP1 = toOriginal(h+p, k-2*p); lrP2 = toOriginal(h+p, k+2*p);
+      }
+      return {
+        type:'Parabola', vertex, focus,
+        axisAnchor: vertex, axisDir,
+        directrixAnchor: dirAnchorP, directrixDir: dirDir,
+        latusRectum: [lrP1, lrP2],
+        focalLength: Math.abs(p)
+      };
+    }
+
+    if(type === 'Ellipse' || type === 'Circle'){
+      const h = -Dp/(2*Ap);
+      const k = -Ep/(2*Cp);
+      const R = (Dp*Dp)/(4*Ap) + (Ep*Ep)/(4*Cp) - Fp;
+      const aSq = R/Ap, bSq = R/Cp;
+      if(!(aSq > 0) || !(bSq > 0)) return null;
+      const majorIsX = aSq >= bSq;
+      const aMaj = Math.sqrt(Math.max(aSq,bSq));
+      const aMin = Math.sqrt(Math.min(aSq,bSq));
+      const c = Math.sqrt(Math.max(aMaj*aMaj - aMin*aMin, 0));
+      const ecc = aMaj > 0 ? c/aMaj : 0;
+      const lrHalf = aMaj > 0 ? (aMin*aMin)/aMaj : 0;
+      let v1,v2,co1,co2,f1,f2,lr1a,lr1b,lr2a,lr2b;
+      if(majorIsX){
+        v1 = toOriginal(h-aMaj, k); v2 = toOriginal(h+aMaj, k);
+        co1 = toOriginal(h, k-aMin); co2 = toOriginal(h, k+aMin);
+        f1 = toOriginal(h-c, k); f2 = toOriginal(h+c, k);
+        lr1a = toOriginal(h-c, k-lrHalf); lr1b = toOriginal(h-c, k+lrHalf);
+        lr2a = toOriginal(h+c, k-lrHalf); lr2b = toOriginal(h+c, k+lrHalf);
+      } else {
+        v1 = toOriginal(h, k-aMaj); v2 = toOriginal(h, k+aMaj);
+        co1 = toOriginal(h-aMin, k); co2 = toOriginal(h+aMin, k);
+        f1 = toOriginal(h, k-c); f2 = toOriginal(h, k+c);
+        lr1a = toOriginal(h-lrHalf, k-c); lr1b = toOriginal(h+lrHalf, k-c);
+        lr2a = toOriginal(h-lrHalf, k+c); lr2b = toOriginal(h+lrHalf, k+c);
+      }
+      const center = toOriginal(h,k);
+      return {
+        type:'Ellipse', center,
+        vertices:[v1,v2], coVertices:[co1,co2], foci:[f1,f2],
+        eccentricity: ecc,
+        majorAxis:[v1,v2], minorAxis:[co1,co2],
+        latusRectum:[[lr1a,lr1b],[lr2a,lr2b]]
+      };
+    }
+    return null;
+  }
+
+  function analyzeEquation(lhs, rhs){
     try{
       const node = math.parse('(' + lhs + ')-(' + rhs + ')');
       const fx = math.derivative(node, 'x');
@@ -532,18 +750,36 @@
         };
       });
       if(Math.abs(vals[0].A-vals[1].A) > eps || Math.abs(vals[0].C-vals[1].C) > eps || Math.abs(vals[0].B-vals[1].B) > eps){
-        return 'General Curve';
+        return { type:'General Curve', props:null };
       }
       const A = vals[0].A, B = vals[0].B, C = vals[0].C;
-      if(Math.abs(A) < eps && Math.abs(B) < eps && Math.abs(C) < eps) return 'Straight Line';
+      if(Math.abs(A) < eps && Math.abs(B) < eps && Math.abs(C) < eps) return { type:'Straight Line', props:null };
+      const D = fx.evaluate({x:0,y:0});
+      const E = fy.evaluate({x:0,y:0});
+      const F = node.evaluate({x:0,y:0});
       const disc = B*B - 4*A*C;
-      if(Math.abs(B) < eps && Math.abs(A-C) < eps) return 'Circle';
-      if(disc < -eps) return 'Ellipse';
-      if(Math.abs(disc) <= eps) return 'Parabola';
-      return 'Hyperbola';
+      let type;
+      if(Math.abs(B) < eps && Math.abs(A-C) < eps) type = 'Circle';
+      else if(disc < -eps) type = 'Ellipse';
+      else if(Math.abs(disc) <= eps) type = 'Parabola';
+      else type = 'Hyperbola';
+      let props = null;
+      try{ props = computeProperties(A,B,C,D,E,F,type); }catch(e){ props = null; }
+      return { type, props };
     }catch(e){
-      return 'General Curve';
+      return { type:'General Curve', props:null };
     }
+  }
+
+  let currentProps = null;
+  const propGroupParabola = document.getElementById('propGroupParabola');
+  const propGroupEllipse = document.getElementById('propGroupEllipse');
+
+  function setPropertyGroupVisibility(type){
+    const showParabola = (type === 'Parabola');
+    const showEllipse = (type === 'Ellipse' || type === 'Circle');
+    propGroupParabola.classList.toggle('prop-hidden', !showParabola);
+    propGroupEllipse.classList.toggle('prop-hidden', !showEllipse);
   }
 
   function updateEq(id){
@@ -555,6 +791,7 @@
     if(!str){
       state[id].fn = null;
       badge.textContent = '—';
+      currentProps = null;
       render(false);
       return;
     }
@@ -563,11 +800,15 @@
       const fn = compileEq(parts.lhs, parts.rhs);
       fn(1,1); // trigger any evaluation error early
       state[id].fn = fn;
-      badge.textContent = classifyEquation(parts.lhs, parts.rhs);
+      const result = analyzeEquation(parts.lhs, parts.rhs);
+      badge.textContent = result.type;
+      currentProps = result.props;
+      setPropertyGroupVisibility(result.type);
     }catch(e){
       state[id].fn = null;
       errEl.textContent = 'Check your equation — use x and y, one "=" sign.';
       badge.textContent = '—';
+      currentProps = null;
     }
     render(false);
   }
@@ -589,6 +830,13 @@
   const lastFocused = 'A';
 
   document.getElementById('showA').addEventListener('change', function(e){ state.A.visible = e.target.checked; render(false); });
+
+  document.querySelectorAll('[data-prop]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      propToggles[cb.dataset.prop] = cb.checked;
+      render(false);
+    });
+  });
 
   // ---------- example chips ----------
   document.querySelectorAll('.examples button').forEach(function(btn){
@@ -880,6 +1128,7 @@
     document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
     btn.classList.add('active');
     renderQuestionButtons(currentSubject === 'ellipse' ? ELLIPSE_QUESTIONS : PARABOLA_QUESTIONS);
+    setPropertyGroupVisibility(currentSubject === 'ellipse' ? 'Ellipse' : 'Parabola');
   });
 
   // init
