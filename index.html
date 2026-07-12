@@ -83,8 +83,17 @@
 
   .properties{
     background:var(--sheet-2); border:1px solid var(--hair); border-radius:6px; padding:12px 14px;
-    display:flex; flex-wrap:wrap; gap:18px;
+    display:flex; flex-direction:column; gap:12px;
   }
+  .prop-answers{
+    display:flex; flex-direction:column; gap:4px;
+    background:#081b30; border:1px solid var(--hair); border-radius:5px; padding:9px 12px;
+  }
+  .prop-answers.prop-hidden{ display:none; }
+  .prop-answer-line{
+    font-family:var(--font-mono); font-size:12.5px; color:var(--amber);
+  }
+  .prop-groups-row{ display:flex; flex-wrap:wrap; gap:18px; }
   .prop-group{ flex:1 1 300px; }
   .prop-group.prop-hidden{ display:none; }
   .prop-group-title{
@@ -297,28 +306,31 @@
     </div>
 
     <div class="properties">
-      <div class="prop-group" id="propGroupParabola">
-        <div class="prop-group-title">Parabola (পরাবৃত্ত)</div>
-        <div class="prop-row">
-          <label><input type="checkbox" data-prop="vertex">Vertex (শীর্ষ)</label>
-          <label><input type="checkbox" data-prop="focus">Focus (উপকেন্দ্র)</label>
-          <label><input type="checkbox" data-prop="directrix">Directrix (নিয়ামক রেখা)</label>
-          <label><input type="checkbox" data-prop="axis">Axis of Symmetry (সমমিতির অক্ষ)</label>
-          <label><input type="checkbox" data-prop="latusRectum">Latus Rectum (উপকেন্দ্রিক লম্ব)</label>
-          <label><input type="checkbox" data-prop="focalLength">Focal Length (উপকেন্দ্রিক দূরত্ব)</label>
+      <div class="prop-answers prop-hidden" id="propAnswers"></div>
+      <div class="prop-groups-row">
+        <div class="prop-group" id="propGroupParabola">
+          <div class="prop-group-title">Parabola (পরাবৃত্ত)</div>
+          <div class="prop-row">
+            <label><input type="checkbox" data-prop="vertex">Vertex (শীর্ষ)</label>
+            <label><input type="checkbox" data-prop="focus">Focus (উপকেন্দ্র)</label>
+            <label><input type="checkbox" data-prop="directrix">Directrix (নিয়ামক রেখা)</label>
+            <label><input type="checkbox" data-prop="axis">Axis of Symmetry (সমমিতির অক্ষ)</label>
+            <label><input type="checkbox" data-prop="latusRectum">Latus Rectum (উপকেন্দ্রিক লম্ব)</label>
+            <label><input type="checkbox" data-prop="focalLength">Focal Length (উপকেন্দ্রিক দূরত্ব)</label>
+          </div>
         </div>
-      </div>
-      <div class="prop-group" id="propGroupEllipse">
-        <div class="prop-group-title">Ellipse (উপবৃত্ত)</div>
-        <div class="prop-row">
-          <label><input type="checkbox" data-prop="center">Center (কেন্দ্র)</label>
-          <label><input type="checkbox" data-prop="majorAxis">Major Axis (প্রধান অক্ষ)</label>
-          <label><input type="checkbox" data-prop="minorAxis">Minor Axis (অপ্রধান অক্ষ)</label>
-          <label><input type="checkbox" data-prop="vertices">Vertices (শীর্ষবিন্দুসমূহ)</label>
-          <label><input type="checkbox" data-prop="coVertices">Co-vertices (উপশীর্ষবিন্দুসমূহ)</label>
-          <label><input type="checkbox" data-prop="foci">Foci (উপকেন্দ্রসমূহ)</label>
-          <label><input type="checkbox" data-prop="eccentricity">Eccentricity (উৎকেন্দ্রিকতা)</label>
-          <label><input type="checkbox" data-prop="latusRectumEllipse">Latus Rectum (উপকেন্দ্রিক লম্ব)</label>
+        <div class="prop-group" id="propGroupEllipse">
+          <div class="prop-group-title">Ellipse (উপবৃত্ত)</div>
+          <div class="prop-row">
+            <label><input type="checkbox" data-prop="center">Center (কেন্দ্র)</label>
+            <label><input type="checkbox" data-prop="majorAxis">Major Axis (প্রধান অক্ষ)</label>
+            <label><input type="checkbox" data-prop="minorAxis">Minor Axis (অপ্রধান অক্ষ)</label>
+            <label><input type="checkbox" data-prop="vertices">Vertices (শীর্ষবিন্দুসমূহ)</label>
+            <label><input type="checkbox" data-prop="coVertices">Co-vertices (উপশীর্ষবিন্দুসমূহ)</label>
+            <label><input type="checkbox" data-prop="foci">Foci (উপকেন্দ্রসমূহ)</label>
+            <label><input type="checkbox" data-prop="eccentricity">Eccentricity (উৎকেন্দ্রিকতা)</label>
+            <label><input type="checkbox" data-prop="latusRectumEllipse">Latus Rectum (উপকেন্দ্রিক লম্ব)</label>
+          </div>
         </div>
       </div>
     </div>
@@ -612,12 +624,62 @@
     }
   }
 
+  function formatPoint(pt){
+    return '(' + fmt(pt.x) + ', ' + fmt(pt.y) + ')';
+  }
+
+  function dist(p1,p2){
+    return Math.hypot(p2.x-p1.x, p2.y-p1.y);
+  }
+
+  function formatLine(anchor, dir){
+    const eps = 1e-6;
+    if(Math.abs(dir.x) < eps) return 'x = ' + fmt(anchor.x);
+    if(Math.abs(dir.y) < eps) return 'y = ' + fmt(anchor.y);
+    const m = dir.y/dir.x;
+    const c = anchor.y - m*anchor.x;
+    return 'y = ' + fmt(m) + 'x ' + (c >= 0 ? '+ ' + fmt(c) : '- ' + fmt(Math.abs(c)));
+  }
+
+  function updatePropertyAnswers(){
+    const el = document.getElementById('propAnswers');
+    const lines = [];
+    if(currentProps){
+      const P = currentProps;
+      if(P.type === 'Parabola'){
+        if(propToggles.vertex) lines.push('Vertex (শীর্ষ) = ' + formatPoint(P.vertex));
+        if(propToggles.focus) lines.push('Focus (উপকেন্দ্র) = ' + formatPoint(P.focus));
+        if(propToggles.directrix) lines.push('Directrix (নিয়ামক রেখা): ' + formatLine(P.directrixAnchor, P.directrixDir));
+        if(propToggles.axis) lines.push('Axis of Symmetry (সমমিতির অক্ষ): ' + formatLine(P.axisAnchor, P.axisDir));
+        if(propToggles.latusRectum) lines.push('Latus Rectum (উপকেন্দ্রিক লম্ব) = ' + fmt(dist(P.latusRectum[0],P.latusRectum[1])) + ' (endpoints ' + formatPoint(P.latusRectum[0]) + ', ' + formatPoint(P.latusRectum[1]) + ')');
+        if(propToggles.focalLength) lines.push('Focal Length (উপকেন্দ্রিক দূরত্ব) = ' + fmt(P.focalLength));
+      } else if(P.type === 'Ellipse'){
+        if(propToggles.center) lines.push('Center (কেন্দ্র) = ' + formatPoint(P.center));
+        if(propToggles.majorAxis) lines.push('Major Axis (প্রধান অক্ষ) = ' + fmt(dist(P.majorAxis[0],P.majorAxis[1])) + ' (vertices ' + formatPoint(P.majorAxis[0]) + ', ' + formatPoint(P.majorAxis[1]) + ')');
+        if(propToggles.minorAxis) lines.push('Minor Axis (অপ্রধান অক্ষ) = ' + fmt(dist(P.minorAxis[0],P.minorAxis[1])) + ' (co-vertices ' + formatPoint(P.minorAxis[0]) + ', ' + formatPoint(P.minorAxis[1]) + ')');
+        if(propToggles.vertices) lines.push('Vertices (শীর্ষবিন্দুসমূহ) = ' + formatPoint(P.vertices[0]) + ', ' + formatPoint(P.vertices[1]));
+        if(propToggles.coVertices) lines.push('Co-vertices (উপশীর্ষবিন্দুসমূহ) = ' + formatPoint(P.coVertices[0]) + ', ' + formatPoint(P.coVertices[1]));
+        if(propToggles.foci) lines.push('Foci (উপকেন্দ্রসমূহ) = ' + formatPoint(P.foci[0]) + ', ' + formatPoint(P.foci[1]));
+        if(propToggles.eccentricity) lines.push('Eccentricity (উৎকেন্দ্রিকতা) = ' + fmt(P.eccentricity));
+        if(propToggles.latusRectumEllipse) lines.push('Latus Rectum (উপকেন্দ্রিক লম্ব) = ' + fmt(dist(P.latusRectum[0][0],P.latusRectum[0][1])) + ' (each, through both foci)');
+      }
+    }
+    if(lines.length === 0){
+      el.innerHTML = '';
+      el.classList.add('prop-hidden');
+      return;
+    }
+    el.classList.remove('prop-hidden');
+    el.innerHTML = lines.map(function(t){ return '<div class="prop-answer-line">' + t + '</div>'; }).join('');
+  }
+
   let renderTimer = null;
   function render(interactive){
     drawGrid();
     const cell = interactive ? 7 : 3;
     if(state.A.visible && state.A.fn) traceAndDraw(state.A.fn, state.A.color, cell);
     drawPropertyOverlays();
+    updatePropertyAnswers();
     if(interactive){
       clearTimeout(renderTimer);
       renderTimer = setTimeout(()=>render(false), 180);
